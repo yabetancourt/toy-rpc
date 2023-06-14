@@ -34,6 +34,10 @@ static context_t *get_context_by_name(const char *name, size_t len)
 static context_t *load_procedure(const char *name, size_t len)
 {
     char filename[1024];
+
+    // name = "jsmith"
+    // filename = "./dynamic/jsmith.so"
+
     snprintf(filename, 14 + len, "./dynamic/%s.so", name);
 
     fprintf(stdout, "Looking for [%s] (%s)\n", filename, name);
@@ -221,6 +225,11 @@ int main(int argc, char *argv[])
 
     pool_stop(pool);
     pool_destroy(pool);
+
+    for (int i = 0; i < loadedprocs; i++)
+    {
+        dlclose(procedures[i].lib_handle);
+    }
 
     close(listenfd);
 
