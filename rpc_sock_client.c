@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    fprintf(stdout, "Connected to server %s:%s\n", argv[1], argv[2]);
+    fprintf(stdout, "Connected to server %s:%s\nType yabetancourt a b c and search the sols for the quadratic\n", argv[1], argv[2]);
     rio_readinitb(&rio, clientfd);
 
     fprintf(stdout, "> ");

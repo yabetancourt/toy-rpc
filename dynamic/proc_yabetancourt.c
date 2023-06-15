@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
+#include <complex.h>
 
 typedef struct
 {
@@ -11,8 +13,10 @@ typedef struct
     double a;
     double b;
     double c;
-    double root1;
-    double root2;
+    complex double root1;
+    complex double root2;
+    bool error;
+    char error_message[255];
 } my_struct_t;
 
 void *parse_parameters(void *data)
@@ -23,7 +27,16 @@ void *parse_parameters(void *data)
 
     if (d)
     {
-        sscanf(buf, "%lf %lf %lf", &d->a, &d->b, &d->c);
+        int parsed_values = sscanf(buf, "%lf %lf %lf", &d->a, &d->b, &d->c);
+        if (parsed_values != 3)
+        {
+            d->error = true;
+            snprintf(d->error_message, 255, "Error al analizar los coeficientes. Asegúrese de ingresar 3 valores separados por espacios.\n");
+        }
+        else
+        {
+            d->error = false;
+        }
     }
 
     return (void *)d;
@@ -32,6 +45,11 @@ void *parse_parameters(void *data)
 void *do_work(void *data)
 {
     my_struct_t *d = (my_struct_t *)(data);
+
+    if (d->error)
+    {
+        return data;
+    }
 
     double a = d->a;
     double b = d->b;
@@ -45,8 +63,8 @@ void *do_work(void *data)
     }
     else
     {
-        d->root1 = NAN;
-        d->root2 = NAN;
+        d->root1 = (-b + csqrt(discriminant)) / (2 * a);
+        d->root2 = (-b - csqrt(discriminant)) / (2 * a);
     }
 
     return data;
@@ -58,11 +76,17 @@ reportable_t *report(void *data)
 
     d->parent.data = (char *)(malloc(255 * sizeof(char)));
 
-    if (isnan(d->root1) || isnan(d->root2)) {
-        snprintf(d->parent.data, 255, "No hay raíces reales para la ecuación cuadrática con coeficientes (%lf, %lf, %lf)\n", d->a, d->b, d->c);
+    if (d->error)
+    {
+        snprintf(d->parent.data, 255, "%s", d->error_message);
     }
-    else {
-        snprintf(d->parent.data, 255, "Las raíces reales de la ecuación cuadrática con coeficientes (%lf, %lf, %lf) son %lf y %lf\n", d->a, d->b, d->c, d->root1, d->root2);
+    else if (cimag(d->root1) == 0 && cimag(d->root2) == 0)
+    {
+        snprintf(d->parent.data, 255, "Las raíces reales de la ecuación cuadrática con coeficientes (%lf, %lf, %lf) son %lf y %lf\n", d->a, d->b, d->c, creal(d->root1), creal(d->root2));
+    }
+    else
+    {
+        snprintf(d->parent.data, 255, "Las raíces complejas de la ecuación cuadrática con coeficientes (%lf, %lf, %lf) son %lf + %lfi y %lf + %lfi\n", d->a, d->b, d->c, creal(d->root1), cimag(d->root1), creal(d->root2), cimag(d->root2));
     }
     d->parent.len = strlen(d->parent.data);
 
